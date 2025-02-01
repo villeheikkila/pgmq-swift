@@ -51,7 +51,7 @@ public final class PGMQClient: PGMQ, Sendable {
     }
 
     public func read(queue: String, vt: Int = 30) async throws -> PGMQMessage? {
-        let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt), 1)")
+        let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt)::integer, 1)")
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
             (Int64, Int64, Date, Date, AnyJSONB).self
         ) {
@@ -67,7 +67,7 @@ public final class PGMQClient: PGMQ, Sendable {
     }
 
     public func read(queue: String, vt: Int = 30, qty: Int) async throws -> [PGMQMessage] {
-        let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt), \(qty))")
+        let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt)::integer, \(qty)::integer)")
         var messages: [PGMQMessage] = []
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
             (Int64, Int64, Date, Date, AnyJSONB).self
