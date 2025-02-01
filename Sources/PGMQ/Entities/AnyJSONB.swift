@@ -168,6 +168,25 @@ public extension AnyJSONB {
     }
 }
 
+public extension AnyJSONB {
+    subscript(key: String) -> AnyJSONB? {
+        guard case let .object(dict) = self else {
+            return nil
+        }
+        return dict[key]
+    }
+
+    subscript(index: Int) -> AnyJSONB? {
+        guard case let .array(array) = self else {
+            return nil
+        }
+        guard index >= 0, index < array.count else {
+            return nil
+        }
+        return array[index]
+    }
+}
+
 extension AnyJSONB: PostgresEncodable, PostgresDecodable {
     public static var psqlType: PostgresDataType {
         .jsonb
