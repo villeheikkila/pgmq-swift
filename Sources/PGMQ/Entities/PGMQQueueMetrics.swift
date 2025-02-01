@@ -1,10 +1,10 @@
 import Foundation
 
 public struct PGMQQueueMetrics: Sendable {
-    let name: String
-    let length: Int64
-    let newestMsgAgeSec: Int64?
-    let oldestMsgAgeSec: Int64?
-    let totalMessages: Int64
-    let scrapeTime: Date
+    public let name: String
+    public let length: Int64
+    public let newestMsgAgeSec: Int64?
+    public let oldestMsgAgeSec: Int64?
+    public let totalMessages: Int64
+    public let scrapeTime: Date
 }
