@@ -1,9 +1,10 @@
 import Foundation
+import PostgresNIO
 
-public typealias JSONObject = [String: AnyJSON]
-public typealias JSONArray = [AnyJSON]
+public typealias JSONObject = [String: AnyJSONB]
+public typealias JSONArray = [AnyJSONB]
 
-public enum AnyJSON: Sendable, Codable, Hashable {
+public enum AnyJSONB: Sendable, Codable, Hashable {
     case null
     case bool(Bool)
     case integer(Int)
@@ -112,57 +113,77 @@ public enum AnyJSON: Sendable, Codable, Hashable {
     }
 }
 
-extension AnyJSON: ExpressibleByNilLiteral {
+extension AnyJSONB: ExpressibleByNilLiteral {
     public init(nilLiteral _: ()) {
         self = .null
     }
 }
 
-extension AnyJSON: ExpressibleByStringLiteral {
+extension AnyJSONB: ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
         self = .string(value)
     }
 }
 
-extension AnyJSON: ExpressibleByArrayLiteral {
-    public init(arrayLiteral elements: AnyJSON...) {
+extension AnyJSONB: ExpressibleByArrayLiteral {
+    public init(arrayLiteral elements: AnyJSONB...) {
         self = .array(elements)
     }
 }
 
-extension AnyJSON: ExpressibleByIntegerLiteral {
+extension AnyJSONB: ExpressibleByIntegerLiteral {
     public init(integerLiteral value: Int) {
         self = .integer(value)
     }
 }
 
-extension AnyJSON: ExpressibleByFloatLiteral {
+extension AnyJSONB: ExpressibleByFloatLiteral {
     public init(floatLiteral value: Double) {
         self = .double(value)
     }
 }
 
-extension AnyJSON: ExpressibleByBooleanLiteral {
+extension AnyJSONB: ExpressibleByBooleanLiteral {
     public init(booleanLiteral value: Bool) {
         self = .bool(value)
     }
 }
 
-extension AnyJSON: ExpressibleByDictionaryLiteral {
-    public init(dictionaryLiteral elements: (String, AnyJSON)...) {
+extension AnyJSONB: ExpressibleByDictionaryLiteral {
+    public init(dictionaryLiteral elements: (String, AnyJSONB)...) {
         self = .object(Dictionary(uniqueKeysWithValues: elements))
     }
 }
 
-extension AnyJSON: CustomStringConvertible {
+extension AnyJSONB: CustomStringConvertible {
     public var description: String {
         String(describing: value)
     }
 }
 
-public extension AnyJSON {
-    static func from(_ data: Data) throws -> AnyJSON {
+public extension AnyJSONB {
+    static func from(_ data: Data) throws -> AnyJSONB {
         let decoder = JSONDecoder()
-        return try decoder.decode(AnyJSON.self, from: data)
+        return try decoder.decode(AnyJSONB.self, from: data)
+    }
+}
+
+extension AnyJSONB: PostgresEncodable, PostgresDecodable {
+    public static var psqlType: PostgresDataType {
+        .jsonb
+    }
+
+    public func encode<JSONEncoder>(
+        into byteBuffer: inout NIOCore.ByteBuffer,
+        context: PostgresEncodingContext<JSONEncoder>
+    ) throws where JSONEncoder: PostgresJSONEncoder {
+        try context.jsonEncoder.encode(self, into: &byteBuffer)
+    }
+
+    public static func decode<JSONDecoder>(
+        from buffer: NIOCore.ByteBuffer,
+        context: PostgresDecodingContext<JSONDecoder>
+    ) throws -> AnyJSONB where JSONDecoder: PostgresJSONDecoder {
+        try context.jsonDecoder.decode(AnyJSONB.self, from: buffer)
     }
 }

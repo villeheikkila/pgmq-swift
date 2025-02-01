@@ -29,6 +29,7 @@ public final class PGMQClient: PGMQ, Sendable {
         self.client = client
     }
 
+    @discardableResult
     public func send(queue: String, message: PostgresEncodable, delay: Int = 0) async throws -> Int64 {
         let rows = try await client.query("SELECT * FROM pgmq.send(\(queue), \(message), \(delay))")
         for try await (id) in rows.decode(Int64.self) {
@@ -37,6 +38,7 @@ public final class PGMQClient: PGMQ, Sendable {
         throw PGMQError.noMessageID
     }
 
+    @discardableResult
     public func send(queue: String, messages: PostgresArrayEncodable, delay: Int = 0) async throws
         -> [Int64]
     {
@@ -51,7 +53,7 @@ public final class PGMQClient: PGMQ, Sendable {
     public func read(queue: String, vt: Int = 30) async throws -> PGMQMessage? {
         let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt), 1)")
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
-            (Int64, Int64, Date, Date, Data).self
+            (Int64, Int64, Date, Date, AnyJSONB).self
         ) {
             return try PGMQMessage(
                 id: id,
@@ -68,7 +70,7 @@ public final class PGMQClient: PGMQ, Sendable {
         let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt), \(qty))")
         var messages: [PGMQMessage] = []
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
-            (Int64, Int64, Date, Date, Data).self
+            (Int64, Int64, Date, Date, AnyJSONB).self
         ) {
             try messages.append(
                 PGMQMessage(
@@ -99,6 +101,7 @@ public final class PGMQClient: PGMQ, Sendable {
         return archived
     }
 
+    @discardableResult
     public func delete(queue: String, id: Int64) async throws -> Bool {
         let rows = try await client.query("SELECT pgmq.delete(\(queue), \(id))")
         for try await (deleted) in rows.decode(Bool.self) {
@@ -107,6 +110,7 @@ public final class PGMQClient: PGMQ, Sendable {
         return false
     }
 
+    @discardableResult
     public func delete(queue: String, ids: [Int64]) async throws -> [Int64] {
         let rows = try await client.query("SELECT pgmq.delete(\(queue), \(ids))")
         var deleted: [Int64] = []
@@ -127,7 +131,7 @@ public final class PGMQClient: PGMQ, Sendable {
     public func pop(queue: String) async throws -> PGMQMessage? {
         let rows = try await client.query("SELECT * FROM pgmq.pop(\(queue))")
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
-            (Int64, Int64, Date, Date, Data).self
+            (Int64, Int64, Date, Date, AnyJSONB).self
         ) {
             return try PGMQMessage(
                 id: id,
@@ -140,10 +144,11 @@ public final class PGMQClient: PGMQ, Sendable {
         return nil
     }
 
+    @discardableResult
     public func setVt(queue: String, id: Int64, vt: Int) async throws -> PGMQMessage? {
         let rows = try await client.query("SELECT * FROM pgmq.set_vt(\(queue), \(id), \(vt))")
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
-            (Int64, Int64, Date, Date, Data).self
+            (Int64, Int64, Date, Date, AnyJSONB).self
         ) {
             return try PGMQMessage(
                 id: id,
