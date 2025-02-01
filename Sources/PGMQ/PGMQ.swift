@@ -22,7 +22,7 @@ public protocol PGMQ: Sendable {
     func detachArchive(queue: String) async throws
 }
 
-public final class PGMQClient: Sendable {
+public final class PGMQClient: PGMQ, Sendable {
     private let client: PostgresClient
 
     public init(client: PostgresClient) {
