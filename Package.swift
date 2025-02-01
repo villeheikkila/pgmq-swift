@@ -4,16 +4,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "PGMQ",
+    name: "pgmq-swift",
     platforms: [
         .macOS(.v13),
-        .iOS(.v13),
+        .iOS(.v16),
         .watchOS(.v6),
         .tvOS(.v13),
     ],
     products: [
         .library(
-            name: "pgmq-swift",
+            name: "PGMQ",
             targets: ["PGMQ"]
         ),
     ],
@@ -26,10 +26,6 @@ let package = Package(
             dependencies: [
                 .product(name: "PostgresNIO", package: "postgres-nio"),
             ]
-        ),
-        .testTarget(
-            name: "pgmq-swiftTests",
-            dependencies: ["PGMQ"]
         ),
     ]
 )
