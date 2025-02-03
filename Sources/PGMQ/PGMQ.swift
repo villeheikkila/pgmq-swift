@@ -17,7 +17,8 @@ public protocol PGMQ: Sendable {
     func createQueue(queue: String) async throws
     func dropQueue(queue: String) async throws
     func createUnloggedQueue(queue: String) async throws
-    func createPartitionedQueue(queue: String, partitionInterval: String, retentionInterval: String) async throws
+    func createPartitionedQueue(queue: String, partitionInterval: String, retentionInterval: String)
+        async throws
     func metricsAll() async throws -> [PGMQQueueMetrics]
     func detachArchive(queue: String) async throws
 }
@@ -30,8 +31,11 @@ public final class PGMQClient: PGMQ, Sendable {
     }
 
     @discardableResult
-    public func send(queue: String, message: PostgresEncodable, delay: Int = 0) async throws -> Int64 {
-        let rows = try await client.query("SELECT * FROM pgmq.send(\(queue), \(message), \(delay))")
+    public func send(queue: String, message: PostgresEncodable, delay: Int = 0) async throws
+        -> Int64
+    {
+        let rows = try await client.query(
+            "SELECT * FROM pgmq.send(\(queue), \(message), \(delay)::integer)")
         for try await (id) in rows.decode(Int64.self) {
             return id
         }
@@ -42,7 +46,8 @@ public final class PGMQClient: PGMQ, Sendable {
     public func send(queue: String, messages: PostgresArrayEncodable, delay: Int = 0) async throws
         -> [Int64]
     {
-        let rows = try await client.query("SELECT * FROM pgmq.send_batch(\(queue), \(messages), \(delay))")
+        let rows = try await client.query(
+            "SELECT * FROM pgmq.send_batch(\(queue), \(messages), \(delay)::integer)")
         var ids: [Int64] = []
         for try await (id) in rows.decode(Int64.self) {
             ids.append(id)
@@ -67,7 +72,8 @@ public final class PGMQClient: PGMQ, Sendable {
     }
 
     public func read(queue: String, vt: Int = 30, qty: Int) async throws -> [PGMQMessage] {
-        let rows = try await client.query("SELECT * FROM pgmq.read(\(queue), \(vt)::integer, \(qty)::integer)")
+        let rows = try await client.query(
+            "SELECT * FROM pgmq.read(\(queue), \(vt)::integer, \(qty)::integer)")
         var messages: [PGMQMessage] = []
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
             (Int64, Int64, Date, Date, AnyJSONB).self
@@ -146,7 +152,8 @@ public final class PGMQClient: PGMQ, Sendable {
 
     @discardableResult
     public func setVt(queue: String, id: Int64, vt: Int) async throws -> PGMQMessage? {
-        let rows = try await client.query("SELECT * FROM pgmq.set_vt(\(queue), \(id), \(vt))")
+        let rows = try await client.query(
+            "SELECT * FROM pgmq.set_vt(\(queue), \(id), \(vt)::integer)")
         for try await (id, readCount, enqueuedAt, vt, message) in rows.decode(
             (Int64, Int64, Date, Date, AnyJSONB).self
         ) {
@@ -195,8 +202,11 @@ public final class PGMQClient: PGMQ, Sendable {
         try await client.query("SELECT pgmq.create_unlogged(\(queue))")
     }
 
-    public func createPartitionedQueue(queue: String, partitionInterval: String, retentionInterval: String) async throws {
-        try await client.query("SELECT pgmq.create_partitioned(\(queue), \(partitionInterval), \(retentionInterval))")
+    public func createPartitionedQueue(
+        queue: String, partitionInterval: String, retentionInterval: String
+    ) async throws {
+        try await client.query(
+            "SELECT pgmq.create_partitioned(\(queue), \(partitionInterval), \(retentionInterval))")
     }
 
     public func metricsAll() async throws -> [PGMQQueueMetrics] {

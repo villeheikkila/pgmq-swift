@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PGMQMessage: Sendable, Identifiable {
+public struct PGMQMessage: Sendable, Identifiable, Codable {
     public let id: Int64
     public let readCount: Int64
     public let enqueuedAt: Date
