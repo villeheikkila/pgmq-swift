@@ -35,7 +35,7 @@ public final class PGMQClient: PGMQ, Sendable {
         -> Int64
     {
         let rows = try await client.query(
-            "SELECT * FROM pgmq.send(\(queue), \(message), \(delay)::integer)")
+            "SELECT * FROM pgmq.send(\(queue), \(message)::jsonb, \(delay)::integer)")
         for try await (id) in rows.decode(Int64.self) {
             return id
         }
@@ -47,7 +47,7 @@ public final class PGMQClient: PGMQ, Sendable {
         -> [Int64]
     {
         let rows = try await client.query(
-            "SELECT * FROM pgmq.send_batch(\(queue), \(messages), \(delay)::integer)")
+            "SELECT * FROM pgmq.send_batch(\(queue), \(messages)::jsonb[], \(delay)::integer)")
         var ids: [Int64] = []
         for try await (id) in rows.decode(Int64.self) {
             ids.append(id)
@@ -90,6 +90,7 @@ public final class PGMQClient: PGMQ, Sendable {
         return messages
     }
 
+    @discardableResult
     public func archive(queue: String, id: Int64) async throws -> Bool {
         let rows = try await client.query("SELECT pgmq.archive(\(queue), \(id))")
         for try await (archived) in rows.decode(Bool.self) {
@@ -98,6 +99,7 @@ public final class PGMQClient: PGMQ, Sendable {
         return false
     }
 
+    @discardableResult
     public func archive(queue: String, ids: [Int64]) async throws -> [Int64] {
         let rows = try await client.query("SELECT pgmq.archive(\(queue), \(ids))")
         var archived: [Int64] = []
